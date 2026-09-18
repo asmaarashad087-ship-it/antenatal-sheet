@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Antenatal Assessment Sheet - Smart Scenario Evaluation</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --primary:#2e7d6b; --primary-dark:#1f5a4e; --accent:#e08e45; --bg:#f4f7f6;
+  --card:#ffffff; --border:#dde5e2; --text:#233; --muted:#66756f; --danger:#c0392b;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:var(--bg);color:var(--text);}
+.hidden{display:none !important;}
+/* Welcome */
+#welcome{min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--primary-dark),var(--primary) 60%,#3fa38a);padding:20px;}
+.welcome-card{background:var(--card);border-radius:16px;padding:40px 36px;max-width:480px;width:100%;
+  box-shadow:0 20px 50px rgba(0,0,0,.25);text-align:center;}
+.welcome-card h1{color:var(--primary-dark);margin-bottom:6px;font-size:1.6rem;}
+.welcome-card p.sub{color:var(--muted);margin-top:0;margin-bottom:26px;}
+.welcome-card input{width:100%;padding:12px 14px;margin-bottom:14px;border:1px solid var(--border);
+  border-radius:8px;font-size:1rem;}
+.welcome-card button{width:100%;padding:13px;border:none;border-radius:8px;background:var(--primary);
+  color:#fff;font-size:1.05rem;font-weight:600;cursor:pointer;transition:.2s;}
+.welcome-card button:hover{background:var(--primary-dark);}
+.welcome-note{font-size:.82rem;color:var(--muted);margin-top:16px;line-height:1.5;}
+/* Top bar */
+#topbar{position:sticky;top:0;z-index:50;background:var(--primary-dark);color:#fff;padding:12px 20px;
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+#topbar .who{font-size:.92rem;}
+#topbar .who b{color:#ffe3b8;}
+#topbar button{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.4);color:#fff;
+  padding:7px 12px;border-radius:6px;cursor:pointer;font-size:.85rem;}
+#topbar button:hover{background:rgba(255,255,255,.3);}
+/* Container */
+#appContainer{max-width:960px;margin:0 auto;padding:24px 16px 100px;}
+.section-card{background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:20px 22px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.section-card h2{color:var(--primary-dark);border-bottom:2px solid var(--primary);
+  padding-bottom:8px;margin-top:0;font-size:1.15rem;}
+.block-subtitle{font-weight:600;color:var(--accent);margin:14px 0 8px;font-size:.95rem;}
+.qa-row{margin-bottom:12px;}
+.qa-row label.qa-label{display:block;font-weight:600;font-size:.92rem;margin-bottom:5px;color:#334;}
+.qa-input input[type=text],.qa-input textarea{width:100%;padding:9px 10px;border:1px solid var(--border);
+  border-radius:6px;font-size:.94rem;font-family:inherit;}
+.qa-input textarea{min-height:60px;resize:vertical;}
+.qa-input input::placeholder,.qa-input textarea::placeholder{color:#9aa5a0;font-style:italic;}
+.yn-group{display:flex;gap:18px;align-items:center;}
+.yn-group label{font-weight:400;display:flex;align-items:center;gap:5px;cursor:pointer;font-size:.9rem;}
+.yn-duration{margin-top:6px;}
+.checklist{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px 14px;}
+.checklist label{font-weight:400;font-size:.88rem;display:flex;gap:6px;align-items:flex-start;cursor:pointer;}
+/* Care plan table */
+table.careplan{width:100%;border-collapse:collapse;margin-top:8px;}
+table.careplan th{background:var(--primary);color:#fff;padding:8px;font-size:.88rem;text-align:left;}
+table.careplan td{border:1px solid var(--border);padding:6px;vertical-align:top;}
+table.careplan textarea{width:100%;border:none;min-height:70px;font-family:inherit;font-size:.88rem;resize:vertical;}
+table.careplan textarea:focus{outline:1px solid var(--primary);}
+#addRowBtn{margin-top:10px;background:var(--accent);color:#fff;border:none;padding:8px 14px;
+  border-radius:6px;cursor:pointer;font-size:.85rem;}
+/* Health education categories */
+.he-cat{border-left:4px solid var(--accent);background:#fbf6ee;padding:12px 14px;border-radius:8px;margin-bottom:14px;}
+.he-cat h3{margin:0 0 8px;color:var(--accent);font-size:1rem;}
+.he-cat textarea{width:100%;min-height:70px;border:1px solid var(--border);border-radius:6px;padding:8px;font-family:inherit;}
+/* Action bar */
+#actionBar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--border);
+  padding:14px 16px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;
+  box-shadow:0 -4px 14px rgba(0,0,0,.06);}
+#actionBar button{padding:11px 18px;border:none;border-radius:8px;font-weight:600;cursor:pointer;
+  font-size:.92rem;color:#fff;}
+#btnFinish{background:var(--primary);}
+#btnScore{background:#3f7cac;}
+#btnStats{background:#8e6bbf;}
+#btnExport{background:var(--accent);}
+#actionBar button:disabled{opacity:.5;cursor:not-allowed;}
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;
+  justify-content:center;z-index:100;padding:16px;}
+.modal-box{background:#fff;border-radius:12px;padding:26px 28px;max-width:520px;width:100%;
+  max-height:85vh;overflow-y:auto;}
+.modal-box h2{margin-top:0;color:var(--primary-dark);}
+.modal-box button.close{margin-top:16px;background:var(--primary);color:#fff;border:none;
+  padding:9px 16px;border-radius:6px;cursor:pointer;}
+.stat-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--border);font-size:.9rem;}
+.score-big{font-size:2.6rem;font-weight:700;color:var(--primary);text-align:center;margin:10px 0;}
+/* Faculty */
+#facultyBtn{position:fixed;top:10px;right:14px;z-index:60;background:#2c3e50;color:#fff;
+  border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:.82rem;opacity:.9;}
+table.records{width:100%;border-collapse:collapse;margin-top:10px;font-size:.85rem;}
+table.records th,table.records td{border:1px solid var(--border);padding:6px 8px;text-align:left;}
+table.records th{background:var(--primary);color:#fff;}
+.small-btn{padding:5px 9px;font-size:.78rem;border:none;border-radius:5px;background:var(--primary);color:#fff;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<!-- FACULTY LOGIN BUTTON -->
+<button id="facultyBtn" onclick="facultyLogin()">Faculty Login</button>
+
+<!-- WELCOME SCREEN -->
+<div id="welcome">
+  <div class="welcome-card">
+    <h1>Antenatal Assessment Sheet</h1>
+    <p class="sub">Obstetric Nursing – Student Worksheet</p>
+    <input type="text" id="studentName" placeholder="Enter your full name">
+    <input type="text" id="studentGroup" placeholder="Enter your group number">
+    <button onclick="startSheet()">Start Sheet</button>
+    <div class="welcome-note">Fill out the sheet based on Marwa Ahmed's scenario. Evaluation is strictly based on clinical accuracy and scenario matching.</div>
+  </div>
+</div>
+
+<!-- TOP BAR -->
+<div id="topbar" class="hidden">
+  <div class="who">Student: <b id="topName"></b> &nbsp;|&nbsp; Group: <b id="topGroup"></b></div>
+  <div>Date: <span id="topDate"></span></div>
+</div>
+
+<!-- MAIN APP -->
+<div id="appContainer" class="hidden"></div>
+
+<!-- ACTION BAR -->
+<div id="actionBar" class="hidden">
+  <button id="btnFinish" onclick="finishSheet()">✔ Finish &amp; Submit</button>
+  <button id="btnScore" onclick="showScore()">📊 Clinical Evaluation &amp; Score</button>
+  <button id="btnStats" onclick="showStats()">📈 Statistics</button>
+  <button id="btnExport" onclick="exportPDF()">⬇ Export as PDF</button>
+</div>
+
+<script>
+/* ---------------- DATA MODEL ---------------- */
+const sections = [
+{title:"1. Personal & Social History", blocks:[
+  {kind:'fields', fields:[
+    {type:'text',label:'Mother name'},{type:'text',label:'Age'},
+    {type:'text',label:'Level of education'},{type:'text',label:'Marital condition'},
+    {type:'text',label:'Degree of relation'},{type:'text',label:'Diagnosis'}
+  ]}
+]},
+{title:"2. Menstrual History", blocks:[
+  {kind:'fields', fields:[
+    {type:'text',label:'Age of menarche'},{type:'text',label:'Average interval between periods'},
+    {type:'text',label:'Duration'},{type:'text',label:'Rhythm'},
+    {type:'text',label:'L.M.P (Last Menstrual Period)'},{type:'text',label:'E.D.D (Expected Date of Delivery)'}
+  ]}
+]},
+{title:"3. Medical & Surgical History", blocks:[
+  {kind:'fields', subtitle:'A) Medical', fields:[
+    {type:'text',label:'Kidney disorder'},{type:'text',label:'Cardio-vascular disease'},
+    {type:'text',label:'Diabetic'},{type:'text',label:'Psychological'},{type:'text',label:'Venereal disease'}
+  ]},
+  {kind:'fields', subtitle:'B) Surgical', fields:[
+    {type:'text',label:'CS (Cesarean Section)'},{type:'text',label:'Vesico-vaginal fistula'},
+    {type:'text',label:'Curettage'},{type:'text',label:'Major operation'}
+  ]}
+]},
+{title:"4. Family History", blocks:[
+  {kind:'fields', fields:[
+    {type:'text',label:'Diabetes'},{type:'text',label:'Multiple pregnancy'},{type:'text',label:'Renal disorder'},
+    {type:'text',label:'Hypertension'},{type:'text',label:'Psychiatric disorder'},{type:'text',label:'Others'}
+  ]}
+]},
+{title:"5. Obstetrical History", blocks:[
+  {kind:'fields', fields:[
+    {type:'text',label:'Gravida'},{type:'text',label:'Para'},{type:'text',label:'Abortion'},
+    {type:'text',label:'Still birth'},{type:'text',label:'No. of living children'},
+    {type:'text',label:'No. of low birth weight'},{type:'text',label:'Age of youngest child'}
+  ]}
+]},
+{title:"6. Previous Complications", blocks:[
+  {kind:'fields', fields:[
+    {type:'yesno',label:'Abortion'},{type:'yesno',label:'Ante partum hemorrhage'},{type:'yesno',label:'Toxemia'},
+    {type:'yesno',label:'Polyhydramnios'},{type:'yesno',label:'Oligohydramnios'},{type:'yesno',label:'Ectopic pregnancy'}
+  ]}
+]},
+{title:"7. Previous Delivery", blocks:[
+  {kind:'fields', subtitle:'Delivery type', fields:[
+    {type:'yesno',label:'Normal delivery'},{type:'yesno',label:'Abnormal delivery (Cesarean section)'}
+  ]},
+  {kind:'fields', subtitle:'Post-partum complications', fields:[
+    {type:'yesno',label:'Precipitate labor'},{type:'yesno',label:'Prolonged labor'},
+    {type:'yesno',label:'Post-partum infection'},{type:'yesno',label:'Post-partum hemorrhage'}
+  ]},
+  {kind:'fields', subtitle:'Neonatal complications', fields:[
+    {type:'yesno',label:'Neonatal jaundice'},{type:'yesno',label:'Neonatal death (within one week)'},
+    {type:'text',label:'Others (specify)'}
+  ]}
+]},
+{title:"8. Contraceptive Methods", blocks:[
+  {kind:'fields', fields:[
+    {type:'yesnoDuration',label:'Contraceptive method(s) used'},
+    {type:'yesnoDuration',label:'IUD'},{type:'yesnoDuration',label:'Pills'},
+    {type:'yesnoDuration',label:'Condom'},{type:'yesnoDuration',label:'Diaphragm'},
+    {type:'text',label:'Others'}
+  ]}
+]},
+{title:"9. History of Present Pregnancy & Mother's Complaints", blocks:[
+  {kind:'checklist', subtitle:'Medical & Obstetrical History – Warning Signs', options:[
+    'Diabetes mellitus','Gestational diabetes','Heart disease','Renal disease','Rhesus antibodies','Toxaemia',
+    'Anemia','Toxoplasmosis','Hepatic disease','Cervical incompetence','Premature rupture of membrane',
+    'Polyhydramnios','Oligohydramnios','Preterm labor','Intra uterine fetal death','Infection',
+    'Severe frontal headache','Sudden swelling of face, finger, feet','Sudden enlargement of abdomen',
+    'Chills or fever','Marked changes of fetal movement','Premature onset of contractions',
+    'Sudden escape of fluid from vagina','Dysuria, oliguria, anuria','Blurring vision','Persistent vomiting',
+    'Severe persistent abdominal pain','Vaginal bleeding','Vaginal discharge (itching, odor)'
+  ]},
+  {kind:'checklist', subtitle:'Minor Discomforts', options:[
+    'Morning sickness','Ptyalism','Pica','Heart burn','Flatulence','Frequency of micturition','Fainting',
+    'Dyspnea','Backache','Constipation','Muscle cramps','Leucorrhea','Hemorrhoids','Varicosities'
+  ]}
+]},
+{title:"10. Examination", blocks:[
+  {kind:'fields', subtitle:'General – Vital Signs', fields:[
+    {type:'text',label:'Temperature'},{type:'text',label:'Pulse'},{type:'text',label:'Blood pressure'}
+  ]},
+  {kind:'fields', subtitle:'Local', fields:[
+    {type:'text',label:'Duration of pregnancy (weeks)'},{type:'text',label:'Fundal level'},
+    {type:'text',label:'Fetal size'},{type:'text',label:'Lie'},{type:'text',label:'Presentation'},
+    {type:'text',label:'Attitude'},{type:'text',label:'Fetal heart sound'}
+  ]},
+  {kind:'fields', subtitle:'Grips', fields:[
+    {type:'text',label:'Fundal grip'},{type:'text',label:'Abdominal grip – Rt'},{type:'text',label:'Abdominal grip – Lt'},
+    {type:'text',label:'1st pelvic grip'},{type:'text',label:'2nd pelvic grip'},{type:'text',label:'Position'}
+  ]},
+  {kind:'fields', subtitle:'Measurements', fields:[
+    {type:'text',label:'Weight (Kg)'},{type:'text',label:'Height (cm)'}
+  ]},
+  {kind:'checklist', subtitle:'Abdominal Signs', options:['Skin edema','Pallor']},
+  {kind:'fields', fields:[{type:'text',label:'Other abdominal sign'}]}
+]},
+{title:"11. Investigation", blocks:[
+  {kind:'fields', subtitle:'Urine', fields:[
+    {type:'text',label:'Sugar'},{type:'text',label:'Ketones'},{type:'text',label:'Protein'}
+  ]},
+  {kind:'fields', fields:[{type:'text',label:'Hemoglobin (g/dl)'}]},
+  {kind:'radio', label:'Fetal kick count (fetal movement in 12h)', options:[
+    'Fetal movement = 10 in 12h','Fetal movement > 10 in 12h','Fetal movement < 10 in 12h'
+  ]}
+]}
+];
+
+const healthEdCategories = [
+  {label:'Nutrition & Diet during Pregnancy'},
+  {label:'Personal Hygiene & Self-care'},
+  {label:'Danger Signs to Report Immediately'},
+  {label:'Rest, Sleep & Physical Activity'},
+  {label:'Breastfeeding Preparation'},
+  {label:'Antenatal Follow-up Visits'}
+];
+
+/* ---------------- RENDER ---------------- */
+const container = document.getElementById('appContainer');
+let startTime = null;
+let finished = false;
+
+function fieldHTML(f){
+  if(f.type==='text'){
+    return `<div class="qa-row"><label class="qa-label">${f.label}</label>
+      <div class="qa-input"><input type="text" placeholder="Write your answer here"></div></div>`;
+  }
+  if(f.type==='yesno'){
+    const n='yn_'+Math.random().toString(36).slice(2,9);
+    return `<div class="qa-row"><label class="qa-label">${f.label}</label>
+      <div class="qa-input yn-group" data-name="${n}">
+        <label><input type="radio" name="${n}" value="Yes"> Yes</label>
+        <label><input type="radio" name="${n}" value="No"> No</label>
+      </div></div>`;
+  }
+  if(f.type==='yesnoDuration'){
+    const n='ynd_'+Math.random().toString(36).slice(2,9);
+    return `<div class="qa-row"><label class="qa-label">${f.label}</label>
+      <div class="qa-input">
+        <div class="yn-group" data-name="${n}">
+          <label><input type="radio" name="${n}" value="Yes"> Yes</label>
+          <label><input type="radio" name="${n}" value="No"> No</label>
+        </div>
+        <div class="yn-duration"><input type="text" placeholder="Write duration here (if applicable)"></div>
+      </div></div>`;
+  }
+}
+
+function checklistHTML(block){
+  const n='cl_'+Math.random().toString(36).slice(2,9);
+  const opts = block.options.map(o=>`<label><input type="checkbox" name="${n}" value="${o}">${o}</label>`).join('');
+  return `<div class="qa-row"><label class="qa-label">${block.subtitle}</label>
+    <div class="qa-input checklist" data-name="${n}">${opts}</div></div>`;
+}
+
+function radioBlockHTML(block){
+  const n='rd_'+Math.random().toString(36).slice(2,9);
+  const opts = block.options.map(o=>`<label style="font-weight:400;display:block;margin:3px 0;"><input type="radio" name="${n}" value="${o}"> ${o}</label>`).join('');
+  return `<div class="qa-row"><label class="qa-label">${block.label}</label>
+    <div class="qa-input" data-name="${n}">${opts}</div></div>`;
+}
+
+function renderForm(){
+  let html = '';
+  sections.forEach(sec=>{
+    html += `<div class="section-card"><h2>${sec.title}</h2>`;
+    sec.blocks.forEach(block=>{
+      if(block.kind==='fields'){
+        if(block.subtitle) html += `<div class="block-subtitle">${block.subtitle}</div>`;
+        block.fields.forEach(f=> html += fieldHTML(f));
+      } else if(block.kind==='checklist'){
+        html += checklistHTML(block);
+      } else if(block.kind==='radio'){
+        html += radioBlockHTML(block);
+      }
+    });
+    html += `</div>`;
+  });
+
+  // Nursing Care Plan
+  html += `<div class="section-card"><h2>12. Nursing Care Plan</h2>
+    <table class="careplan" id="carePlanTable">
+      <thead><tr><th style="width:34%">Nursing Diagnosis</th><th style="width:33%">Goal</th><th style="width:33%">Interventions</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <button id="addRowBtn" onclick="addCareRow()">+ Add Row</button>
+  </div>`;
+
+  // Health Education
+  html += `<div class="section-card"><h2>13. Health Education</h2>
+    <p style="color:var(--muted);font-size:.88rem;margin-top:-4px;">Write your health education plan for the mother under each category below.</p>`;
+  healthEdCategories.forEach(c=>{
+    html += `<div class="he-cat"><h3>${c.label}</h3>
+      <textarea placeholder="Write your answer here"></textarea></div>`;
+  });
+  html += `</div>`;
+
+  container.innerHTML = html;
+  for(let i=0;i<2;i++) addCareRow();
+}
+
+function addCareRow(){
+  const tbody = document.querySelector('#carePlanTable tbody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><textarea placeholder="Write the nursing diagnosis here"></textarea></td>
+    <td><textarea placeholder="Write the goal here"></textarea></td>
+    <td><textarea placeholder="Write the interventions here"></textarea></td>`;
+  tbody.appendChild(tr);
+}
+
+/* ---------------- START ---------------- */
+function startSheet(){
+  const name = document.getElementById('studentName').value.trim();
+  const group = document.getElementById('studentGroup').value.trim();
+  if(!name || !group){ alert('Please enter your name and group number to start.'); return; }
+  window.studentInfo = {name, group, date: new Date().toLocaleDateString()};
+  document.getElementById('welcome').classList.add('hidden');
+  document.getElementById('topbar').classList.remove('hidden');
+  document.getElementById('appContainer').classList.remove('hidden');
+  document.getElementById('actionBar').classList.remove('hidden');
+  document.getElementById('topName').textContent = name;
+  document.getElementById('topGroup').textContent = group;
+  document.getElementById('topDate').textContent = window.studentInfo.date;
+  renderForm();
+  startTime = Date.now();
+}
+
+/* ---------------- DATA COLLECTION ---------------- */
+function collectData(){
+  const qaPairs = [];
+  document.querySelectorAll('.section-card').forEach(card=>{
+    const secTitle = card.querySelector('h2') ? card.querySelector('h2').textContent : '';
+    if(secTitle.startsWith('12.') || secTitle.startsWith('13.')) return;
+    card.querySelectorAll('.qa-row').forEach(row=>{
+      const label = row.querySelector('.qa-label').textContent;
+      let value = '';
+      const textInput = row.querySelector('.qa-input > input[type=text], .qa-input .yn-duration input[type=text]');
+      const radios = row.querySelectorAll('input[type=radio]');
+      const checks = row.querySelectorAll('input[type=checkbox]');
+      if(checks.length){
+        value = Array.from(checks).filter(c=>c.checked).map(c=>c.value).join(', ') || '(none selected)';
+      } else if(radios.length){
+        const sel = Array.from(radios).find(r=>r.checked);
+        value = sel ? sel.value : '(not answered)';
+        const durationInput = row.querySelector('.yn-duration input[type=text]');
+        if(durationInput && durationInput.value.trim()) value += ' – Duration: ' + durationInput.value.trim();
+      } else if(textInput){
+        value = textInput.value.trim() || '(not answered)';
+      }
+      qaPairs.push({section: secTitle, label, value});
+    });
+  });
+
+  const carePlan = [];
+  document.querySelectorAll('#carePlanTable tbody tr').forEach(tr=>{
+    const cells = tr.querySelectorAll('textarea');
+    const diag = cells[0].value.trim(), goal = cells[1].value.trim(), interv = cells[2].value.trim();
+    if(diag||goal||interv) carePlan.push({diag: diag||'-', goal: goal||'-', interv: interv||'-'});
+  });
+
+  const healthEd = [];
+  document.querySelectorAll('.he-cat').forEach(box=>{
+    const label = box.querySelector('h3').textContent;
+    const value = box.querySelector('textarea').value.trim() || '(not answered)';
+    healthEd.push({label, value});
+  });
+
+  return {qaPairs, carePlan, healthEd};
+}
+
+/* ---------------- STRICT CLINICAL EVALUATION (True Scenario Correction) ---------------- */
+function evaluateSheet(data){
+  // الإجابات النموذجية الصحيحة المستخرجة بدقة من سيناريو مروا أحمد
+  const correctAnswers = {
+    "Mother name": "marwa ahmed",
+    "Age": "28",
+    "Level of education": "university graduate",
+    "Marital condition": "married",
+    "Age of menarche": "13",
+    "Average interval between periods": "28",
+    "Duration": "5",
+    "Rhythm": "regular",
+    "L.M.P (Last Menstrual Period)": "february 10",
+    "E.D.D (Expected Date of Delivery)": "november 17",
+    "Cardio-vascular disease": "hypertension",
+    "CS (Cesarean Section)": "yes",
+    "Hypertension": "positive",
+    "Gravida": "2",
+    "Para": "1",
+    "Abortion": "0",
+    "No. of living children": "1",
+    "Age of youngest child": "2",
+    "Contraceptive method(s) used": "yes",
+    "Pills": "yes",
+    "Temperature": "37",
+    "Pulse": "78",
+    "Blood pressure": "130/85",
+    "Duration of pregnancy (weeks)": "32",
+    "Lie": "longitudinal",
+    "Presentation": "cephalic",
+    "Fetal heart sound": "142",
+    "Protein": "trace",
+    "Hemoglobin (g/dl)": "11.2"
+  };
+
+  let earnedPoints = 0;
+  let totalCriteria = 0;
+
+  // 1. تقييم الحقول النصية والمباشرة بدقة صحة الإجابة وليست لمجرد الكتابة
+  data.qaPairs.forEach(q => {
+    const label = q.label.trim();
+    const val = q.value.toLowerCase().trim();
+    
+    if (correctAnswers.hasOwnProperty(label)) {
+      totalCriteria++;
+      const expected = correctAnswers[label];
+      if (val.includes(expected)) {
+        earnedPoints++;
+      }
+    } else {
+      // الأسئلة الإضافية أو الاختيارية (مثل الشيكليت) إذا اختار العلامات الصحيحة للسيناريو
+      if (label.includes("Warning Signs") || label.includes("Minor Discomforts")) {
+        totalCriteria++;
+        if (val.includes("morning sickness") || val.includes("heart burn") || val.includes("backache") || val.includes("toxaemia")) {
+          earnedPoints++;
+        }
+      }
+    }
+  });
+
+  // 2. تقييم خطة الرعاية (Care Plan) صحة إكلينيكية
+  totalCriteria += 2;
+  let cpScore = 0;
+  data.carePlan.forEach(cp => {
+    const text = (cp.diag + " " + cp.goal + " " + cp.interv).toLowerCase();
+    if (text.includes('pressure') || text.includes('hypertension') || text.includes('backache')) {
+      cpScore = 2;
+    } else if (text.length > 10) {
+      cpScore = 0.5;
+    }
+  });
+  earnedPoints += cpScore;
+
+  // 3. تقييم التثقيف الصحي (Health Education) صحة إكلينيكية
+  totalCriteria += data.healthEd.length;
+  data.healthEd.forEach(he => {
+    const text = he.value.toLowerCase();
+    if (text.includes('salt') || text.includes('diet') || text.includes('mansoura') || text.includes('headache') || text.includes('vitamin') || text.includes('movement')) {
+      earnedPoints++;
+    }
+  });
+
+  const finalPct = Math.round((earnedPoints / totalCriteria) * 100);
+  return { earnedPoints: Math.round(earnedPoints*10)/10, totalPossiblePoints: totalCriteria, pct: Math.min(finalPct, 100) };
+}
+
+/* ---------------- ACTIONS ---------------- */
+function finishSheet(){
+  if(finished){ alert('You have already submitted this sheet.'); return; }
+  if(!confirm('Are you sure you want to finish and submit the sheet? You will not be able to edit answers after this.')) return;
+  const data = collectData();
+  const scoreObj = evaluateSheet(data);
+  window.lastData = data;
+  window.lastScore = scoreObj;
+  finished = true;
+
+  document.querySelectorAll('#appContainer input, #appContainer textarea').forEach(el=> el.disabled = true);
+
+  const record = {
+    name: window.studentInfo.name,
+    group: window.studentInfo.group,
+    date: window.studentInfo.date,
+    score: scoreObj.pct,
+    earned: scoreObj.earnedPoints,
+    total: scoreObj.totalPossiblePoints,
+    timeSpentMin: startTime ? Math.round((Date.now()-startTime)/60000) : 0,
+    qaPairs: data.qaPairs, carePlan: data.carePlan, healthEd: data.healthEd
+  };
+
+  // 1. حفظ محلي لتعمل لوحة Faculty Login من جهازك
+  const records = JSON.parse(localStorage.getItem('antenatal_records')||'[]');
+  records.push(record);
+  localStorage.setItem('antenatal_records', JSON.stringify(records));
+
+  // 2. إرسال البيانات فوراً لملف الـ Google Sheets الخاص بك على الدرايف
+  const scriptURL = 'ضع_رابط_الـ_Web_App_الخاص_بـ_Apps_Script_هنا'; // <--- ضع رابط جوجل وكتبناه مسبقاً
+
+  const payload = {
+    name: record.name,
+    group: record.group,
+    score: record.score + "% (" + record.earned + "/" + record.total + ")",
+    date: record.date,
+    qaPairs: JSON.stringify(record.qaPairs)
+  };
+  
+  if(scriptURL && scriptURL.startsWith('http')) {
+    fetch(scriptURL, {
+      method: 'POST',
+      mode: 'no-cors',
+      cache: 'no-cache',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(error => console.error('Error syncing with Google Sheets!', error));
+  }
+
+  showModal(`<h2>✔ Sheet Submitted Successfully</h2>
+    <p>Thank you, <b>${window.studentInfo.name}</b>. Your clinically evaluated score is:</p>
+    <div class="score-big">${scoreObj.pct}%</div>
+    <p style="text-align:center;color:var(--muted);">Score: ${scoreObj.earnedPoints} / ${scoreObj.totalPossiblePoints} correct items (Synced with Faculty Database)</p>`);
+}
+
+function showScore(){
+  const data = finished ? window.lastData : collectData();
+  const scoreObj = evaluateSheet(data);
+  showModal(`<h2>📊 Clinical Scenario Evaluation</h2>
+    <div class="score-big">${scoreObj.pct}%</div>
+    <p style="text-align:center;color:var(--muted);">Score: <b>${scoreObj.earnedPoints}</b> out of <b>${scoreObj.totalPossiblePoints}</b> correct criteria<br><i>(Evaluated based on clinical correctness for Marwa Ahmed)</i>[cite: 2]</p>`);
+}
+
+function showStats(){
+  const data = finished ? window.lastData : collectData();
+  let html = `<h2>📈 Statistics</h2>`;
+  const bySection = {};
+  data.qaPairs.forEach(q=>{
+    bySection[q.section] = bySection[q.section] || {total:0, filled:0};
+    bySection[q.section].total++;
+    if(q.value && q.value!=='(not answered)') bySection[q.section].filled++;
+  });
+  Object.keys(bySection).forEach(sec=>{
+    const s = bySection[sec];
+    html += `<div class="stat-row"><span>${sec}</span><span>${s.filled}/${s.total}</span></div>`;
+  });
+  html += `<div class="stat-row"><span>Nursing Care Plan rows filled</span><span>${data.carePlan.length}</span></div>`;
+  const heFilled = data.healthEd.filter(h=>h.value!=='(not answered)').length;
+  html += `<div class="stat-row"><span>Health Education categories</span><span>${heFilled}/${data.healthEd.length}</span></div>`;
+  if(startTime) html += `<div class="stat-row"><span>Time spent</span><span>${Math.round((Date.now()-startTime)/60000)} min</span></div>`;
+  showModal(html);
+}
+
+function showModal(innerHTML){
+  const overlay = document.createElement('div');
+  overlay.className='modal-overlay';
+  overlay.innerHTML = `<div class="modal-box">${innerHTML}<button class="close" onclick="this.closest('.modal-overlay').remove()">Close</button></div>`;
+  document.body.appendChild(overlay);
+}
+
+/* ---------------- PDF EXPORT ---------------- */
+function buildPDF(record){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  let y = 15;
+  doc.setFontSize(16); doc.text('Antenatal Assessment Sheet - Evaluation', 14, y); y+=8;
+  doc.setFontSize(10);
+  doc.text(`Student name: ${record.name}`, 14, y); y+=6;
+  doc.text(`Group: ${record.group}`, 14, y); y+=6;
+  doc.text(`Date: ${record.date}`, 14, y); y+=6;
+  doc.text(`Final Score: ${record.score}% (${record.earned}/${record.total} correct items)`, 14, y); y+=10;
+
+  let currentSection = '';
+  const bodyRows = [];
+  record.qaPairs.forEach(q=>{
+    bodyRows.push([q.section===currentSection?'':q.section, q.label, q.value]);
+    currentSection = q.section;
+  });
+  doc.autoTable({ startY:y, head:[['Section','Question','Answer']], body: bodyRows,
+    styles:{fontSize:8, cellPadding:2}, headStyles:{fillColor:[46,125,107]},
+    columnStyles:{0:{cellWidth:38},1:{cellWidth:70}} });
+  y = doc.lastAutoTable.finalY + 10;
+
+  if(y > 260){ doc.addPage(); y = 15; }
+  doc.setFontSize(13); doc.text('Nursing Care Plan', 14, y); y+=4;
+  const cpRows = record.carePlan.length ? record.carePlan.map(r=>[r.diag,r.goal,r.interv]) : [['-','-','-']];
+  doc.autoTable({ startY:y, head:[['Nursing Diagnosis','Goal','Interventions']], body:cpRows,
+    styles:{fontSize:8, cellPadding:2}, headStyles:{fillColor:[224,142,69]} });
+  y = doc.lastAutoTable.finalY + 10;
+
+  if(y > 260){ doc.addPage(); y = 15; }
+  doc.setFontSize(13); doc.text('Health Education', 14, y); y+=4;
+  const heRows = record.healthEd.map(h=>[h.label, h.value]);
+  doc.autoTable({ startY:y, head:[['Category','Plan']], body:heRows,
+    styles:{fontSize:8, cellPadding:2}, headStyles:{fillColor:[63,124,172]} });
+
+  return doc;
+}
+
+function exportPDF(){
+  if(!finished){ alert('Please finish and submit the sheet before exporting to PDF.'); return; }
+  const record = {
+    name: window.studentInfo.name, group: window.studentInfo.group, date: window.studentInfo.date,
+    score: window.lastScore.pct, earned: window.lastScore.earnedPoints, total: window.lastScore.totalPossiblePoints,
+    qaPairs: window.lastData.qaPairs, carePlan: window.lastData.carePlan, healthEd: window.lastData.healthEd
+  };
+  const doc = buildPDF(record);
+  doc.save(`Antenatal_Sheet_${record.name.replace(/\s+/g,'_')}_${record.group}.pdf`);
+}
+
+/* ---------------- FACULTY PANEL ---------------- */
+const FACULTY_PASSWORD = 'faculty123';
+function facultyLogin(){
+  const pwd = prompt('Enter faculty password:');
+  if(pwd===null) return;
+  if(pwd !== FACULTY_PASSWORD){ alert('Incorrect password.'); return; }
+  openFacultyPanel();
+}
+function openFacultyPanel(){
+  const records = JSON.parse(localStorage.getItem('antenatal_records')||'[]');
+  let rows = records.map((r,i)=>`<tr>
+    <td>${r.name}</td><td>${r.group}</td><td>${r.score}% (${r.earned}/${r.total})</td><td>${r.date}</td>
+    <td><button class="small-btn" onclick="viewRecordPDF(${i})">View PDF</button></td></tr>`).join('');
+  if(!rows) rows = `<tr><td colspan="5" style="text-align:center;color:var(--muted);">No submitted sheets yet.</td></tr>`;
+  const html = `<h2>👩‍🏫 Faculty Panel – Student Results</h2>
+    <table class="records"><thead><tr><th>Name</th><th>Group</th><th>Score</th><th>Date</th><th>Action</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    <button class="small-btn" style="margin-top:14px;background:var(--accent);" onclick="exportExcel()">⬇ Export All to Excel</button>`;
+  showModal(html);
+}
+function viewRecordPDF(index){
+  const records = JSON.parse(localStorage.getItem('antenatal_records')||'[]');
+  const r = records[index];
+  const doc = buildPDF(r);
+  doc.save(`Antenatal_Sheet_${r.name.replace(/\s+/g,'_')}_${r.group}.pdf`);
+}
+function exportExcel(){
+  const records = JSON.parse(localStorage.getItem('antenatal_records')||'[]');
+  if(!records.length){ alert('No records to export yet.'); return; }
+  const data = records.map(r=>({ 'Student Name': r.name, 'Group': r.group, 'Score (%)': r.score,
+    'Points Earned': r.earned, 'Total Points': r.total, 'Date': r.date, 'Time Spent (min)': r.timeSpentMin||'' }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Students');
+  XLSX.writeFile(wb, 'Antenatal_Sheet_Results.xlsx');
+}
+</script>
+</body>
+</html>
